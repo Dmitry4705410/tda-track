@@ -23,6 +23,19 @@ export function useSettings() {
       }
       setLoading(false)
     })
+    const unsubscribe = window.api.onStoreChanged((payload) => {
+      if (payload.key === 'settings') {
+        if (payload.value && typeof payload.value === 'object') {
+          setSettings({ ...defaultSettings, ...(payload.value as Partial<Setting>) })
+        } else {
+          setSettings(defaultSettings)
+        }
+      }
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const save = async (newSettings: Setting) => {

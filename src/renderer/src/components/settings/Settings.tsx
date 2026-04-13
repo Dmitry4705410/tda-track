@@ -49,8 +49,9 @@ export default function Settings({ isOpen, onClose, setting, onSave }: SettingsP
 
       const token = await getToken()
       const user = await getMyself(token);
-      setForm({ ...form, uid: user.uid })
-      await onSave(form)
+      const nextForm = { ...form, uid: user.uid };
+      setForm(nextForm);
+      await onSave(nextForm);
       add({ name: `ping`, title: 'Подключение успешно', content: `Привет, ${user.display}`, theme: 'success' })
     } catch {
       add({ name: `ping`, title: 'Неизвестная ошибка', theme: 'warning' })
