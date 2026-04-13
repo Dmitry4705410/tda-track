@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-
+type __TEST__ = NotExistingType
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -24,3 +24,4 @@ declare global {
     }
   }
 }
+export {}
