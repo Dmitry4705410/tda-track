@@ -105,6 +105,7 @@ function createWindow() {
 }
 electron.app.whenReady().then(() => {
   utils.electronApp.setAppUserModelId("com.tda.track");
+  electron.app.setName("tda-track");
   electron.app.on("browser-window-created", (_, window) => {
     utils.optimizer.watchWindowShortcuts(window);
   });

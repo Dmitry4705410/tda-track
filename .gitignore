@@ -5,5 +5,5 @@ dist
 *.log*
 .idea
 .vscode
-out/renderer
+out
 tsconfig.node.tsbuildinfo

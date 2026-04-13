@@ -1,11 +1,11 @@
 import classes from './style.module.css'
 import DateControl from "@renderer/components/DateControl/DateControl";
 import { DateTime, dateTime } from "@gravity-ui/date-utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Setting } from "@renderer/hooks/useSettings";
 import { useWorklogs, WorklogItem } from "@renderer/hooks/useWorklogs";
 import { useYandexAuth } from "@renderer/hooks/useYandexAuth";
-import { Skeleton, Text, useToaster } from "@gravity-ui/uikit";
+import { Button, ClipboardButton, Skeleton, Text, useToaster } from "@gravity-ui/uikit";
 import TaskItem from "@renderer/components/TaskItem/TaskItem";
 import TrackTaskItem from "@renderer/components/TrackTaskItem/TrackTaskItem";
 import { useTracker } from "@renderer/hooks/useTracker";
@@ -14,49 +14,58 @@ interface props {
   setting: Setting,
   fetchRef: React.MutableRefObject<() => void>
 }
-
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 export default function Tasks({ setting, fetchRef }: props) {
   const { add } = useToaster()
   const [date, setDate] = useState<DateTime | null>(dateTime())
-  const { getWorklogs } = useWorklogs(setting.organizationId, setting.uid)
+  const { getWorklogs, addWorklog  } = useWorklogs(setting.organizationId, setting.uid)
   const { getToken } = useYandexAuth(setting.token)
   const [worklogs, setWorklogs] = useState<WorklogItem[]>([])
   const [loading, setLoading] = useState(false);
+
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   const { tracks, updateTask, deleteTask } = useTracker()
   const today = date?.format('YYYY-MM-DD') ?? null
   const todayTasks = today ? (tracks.find(d => d.date === today)?.tasks ?? []) : []
 
+  const loadWorklogs = useCallback(async (d: DateTime) => {
+    setLoading(true);
+    setWorklogs([]);
+
+    try {
+      const token = await getToken()
+      const result = await getWorklogs(token, d)
+      setWorklogs(result)
+    } catch {
+      add({ name: 'worklog-get-error', title: 'Ошибка получения списанного времени', theme: 'warning' })
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken, getWorklogs, add])
+
   useEffect(() => {
     if (!date || !setting.uid) return
 
-    const loadWorklogs = async (d: DateTime) => {
-      setLoading(true);
-      setWorklogs([]);
-      const token = await getToken()
-      try {
-        const result = await getWorklogs(token, d)
-        setWorklogs(result)
-      } catch {
-        add({ name: 'worklog-get-error', title: 'Ошибка получения списанного времени', theme: 'warning' })
-      } finally {
-        setLoading(false);
+    fetchRef.current = () => {
+      if (date) {
+        void loadWorklogs(date)
       }
     }
 
-    fetchRef.current = () => loadWorklogs(date)
-    loadWorklogs(date)
-  }, [date, setting.uid])
+    void loadWorklogs(date)
+  }, [date, setting.uid, loadWorklogs, fetchRef])
 
   const parseIsoDurationToSeconds = (iso: string): number => {
-    const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+    const match = iso.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
     if (!match) return 0
 
-    const hours = Number(match[1] ?? 0)
-    const minutes = Number(match[2] ?? 0)
-    const seconds = Number(match[3] ?? 0)
+    const days = Number(match[1] ?? 0)
+    const hours = Number(match[2] ?? 0)
+    const minutes = Number(match[3] ?? 0)
+    const seconds = Number(match[4] ?? 0)
 
-    return hours * 3600 + minutes * 60 + seconds
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
   }
 
   const formatTotalTime = (seconds: number): string => {
@@ -67,6 +76,69 @@ export default function Tasks({ setting, fetchRef }: props) {
     if (h > 0) return `${h}ч`
     return `${m}м`
   }
+
+  const secondsToIsoDuration = (seconds: number): string => {
+    const safeSeconds = Math.max(0, Math.floor(seconds))
+
+    const hours = Math.floor(safeSeconds / 3600)
+    const minutes = Math.floor((safeSeconds % 3600) / 60)
+
+    let result = 'PT'
+
+    if (hours > 0) result += `${hours}H`
+    if (minutes > 0) result += `${minutes}M`
+
+    return result
+  }
+
+  const handleTrackAll = async () => {
+    if (!date || !today || todayTasks.length === 0) return
+
+    setTrackingLoading(true)
+
+    try {
+      const token = await getToken()
+
+      for (const task of todayTasks) {
+        const success = await addWorklog(token, task.key, {
+          start: date.startOf('day').toISOString(),
+          duration: secondsToIsoDuration(task.time),
+          comment: task.comment ?? '',
+        })
+
+        if (!success) {
+          add({
+            name: `worklog-track-error-${task.key}`,
+            title: `Ошибка списания времени для ${task.key}`,
+            theme: 'warning',
+          })
+          continue
+        }
+
+        await deleteTask(task.key, today)
+      }
+      await sleep(2000)
+      await loadWorklogs(date)
+    } catch {
+      add({
+        name: 'worklog-track-common-error',
+        title: 'Ошибка при списании времени',
+        theme: 'warning',
+      })
+    } finally {
+      setTrackingLoading(false)
+    }
+  }
+
+  const clipboardText = useMemo(() => {
+    return worklogs
+      .map((w) => {
+        const time = formatTotalTime(parseIsoDurationToSeconds(w.duration))
+        const commentPart = w.comment?.trim() ? ` (${w.comment.trim()})` : ''
+        return `${w.issue.key}: ${w.issue.display}${commentPart}(${time})`
+      })
+      .join('\n')
+  }, [worklogs])
 
   const totalSeconds =
     todayTasks.reduce((sum, task) => sum + task.time, 0) +
@@ -93,10 +165,20 @@ export default function Tasks({ setting, fetchRef }: props) {
               />
             ))
           )}
+          {todayTasks.length > 0 && (
+            <Button
+              view="action"
+              width={"max"}
+              loading={trackingLoading}
+              onClick={() => void handleTrackAll()}
+            >
+              Списать в Яндекс Трекер
+            </Button>
+          )}
         </div>
         <div className={classes.taskFromTracker}>
           <div className={classes.header}>
-            <Text variant={"subheader-1"} color={"secondary"}>УЖЕ СПИСАНО:</Text>
+            <Text variant={"subheader-1"} color={"secondary"}>УЖЕ СПИСАНО:</Text> <ClipboardButton text={clipboardText} disabled={worklogs.length === 0} />
           </div>
           {loading ? (
             <div className={classes.loader}>

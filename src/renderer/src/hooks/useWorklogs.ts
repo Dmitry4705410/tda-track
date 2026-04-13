@@ -11,6 +11,12 @@ export interface WorklogItem {
   duration: string
 }
 
+export interface TrackInfoRequest {
+  start: string
+  duration: string
+  comment?: string
+}
+
 export function useWorklogs(organizationId: string, createdBy: string) {
   const getWorklogs = useCallback(async (token: string, date: DateTime): Promise<WorklogItem[]> => {
     const startOfDay = date.startOf('day').toISOString()
@@ -38,5 +44,29 @@ export function useWorklogs(organizationId: string, createdBy: string) {
     return res.json()
   }, [organizationId])
 
-  return { getWorklogs }
+  const addWorklog = useCallback(
+    async (
+      token: string,
+      issueKey: string,
+      data: TrackInfoRequest
+    ): Promise<Boolean> => {
+      const res = await fetch(
+        `https://api.tracker.yandex.net/v3/issues/${issueKey}/worklog`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: token,
+            'X-Cloud-Org-ID': organizationId,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      )
+
+      return res.ok;
+    },
+    [organizationId]
+  )
+
+  return { getWorklogs, addWorklog }
 }
