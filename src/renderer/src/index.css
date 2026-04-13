@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;200;300;400;500;700&display=swap');
+@import '@gravity-ui/uikit/styles/fonts.css';
+@import '@gravity-ui/uikit/styles/styles.css';
+@import './styles.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  vertical-align: baseline;
+  text-decoration: none;
+}
+
+:root {
+  font-family: Roboto, sans-serif;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.g-root {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#root {
+  width: 99%;
+  height: 99%;
+  border-radius: 10px;
+  background: rgb(34, 29, 34);
+  overflow: hidden;
+  box-shadow: 0 0px 4px rgba(0, 0, 0, 0.5);
+  position: relative
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(122 93 57 / 0.4) transparent;
+}
+
+*:hover {
+  scrollbar-color: rgb(255 190 92 / 0.5) transparent;
+}
+
+
+
+
+
+

@@ -1,0 +1,22 @@
+.body {
+  width: 95%;
+  margin: auto;
+  height: 86%;
+}
+.header {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.tasks {
+  margin-top: 10px;
+  overflow-y: auto;
+  height: 87%;
+}
+
+.empty {
+  text-align: center;
+}
+
+.allTime {
+  text-align: right;
+}

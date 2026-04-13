@@ -1,0 +1,6 @@
+.body {
+  width: 95%;
+  margin: 10px auto auto;
+  display: flex;
+  gap: 10px;
+}

@@ -1,0 +1,28 @@
+.body {
+  width: 95%;
+  margin: auto;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inputRow {
+  width: 100%;
+}
+
+.timer {
+  text-align: center;
+  padding: 2px 0;
+}
+
+.controls {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+}
+
+.hint {
+  text-align: center;
+}

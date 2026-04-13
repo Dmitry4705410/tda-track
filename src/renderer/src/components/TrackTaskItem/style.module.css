@@ -1,0 +1,49 @@
+.task {
+  background: #222;
+  border: 1px solid #2e2e2e;
+  border-left: 2px solid rgb(255 190 92 / 0.8);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.task, .editTask {
+  margin-bottom: 10px;
+}
+
+.editTask {
+  background: #222;
+  border: 1px solid #2e2e2e;
+  border-left: 2px solid rgb(255 190 92 / 0.8);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.right {
+  white-space: nowrap;
+}
+
+.editHeader {
+  margin-bottom: 6px;
+}
+
+.editRow {
+  margin-bottom: 6px;
+}
+
+.editActions {
+  display: flex;
+  justify-content: right;
+  gap: 6px;
+}
