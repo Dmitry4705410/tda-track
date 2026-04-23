@@ -52,18 +52,17 @@ export function useTracker() {
     }
   }, [loadTracks])
 
-  const saveTrack = useCallback(async (key: string, seconds: number) => {
-    const today = getLocalDateString()
+  const saveTrack = useCallback(async (key: string, seconds: number, date?: string) => {
+    const targetDate = date ?? getLocalDateString()
     const saved = await window.api.getStore('tracks')
     const next = cloneTracks(normalizeTracks(saved))
 
-    const dayIndex = next.findIndex(d => d.date === today)
+    const dayIndex = next.findIndex(d => d.date === targetDate)
 
     if (dayIndex === -1) {
-      next.push({ date: today, tasks: [{ key, time: seconds }] })
+      next.push({ date: targetDate, tasks: [{ key, time: seconds }] })
     } else {
       const taskIndex = next[dayIndex].tasks.findIndex(t => t.key === key)
-
       if (taskIndex === -1) {
         next[dayIndex].tasks.push({ key, time: seconds })
       } else {

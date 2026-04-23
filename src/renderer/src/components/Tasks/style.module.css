@@ -20,3 +20,11 @@
 .allTime {
   text-align: right;
 }
+
+.added{
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 60% 1fr;
+  gap: 10px;
+}
