@@ -5,10 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Setting } from "@renderer/hooks/useSettings";
 import { useWorklogs, WorklogItem } from "@renderer/hooks/useWorklogs";
 import { useYandexAuth } from "@renderer/hooks/useYandexAuth";
-import { Button, ClipboardButton, Skeleton, Text, useToaster } from "@gravity-ui/uikit";
+import { Button, ClipboardButton, Skeleton, Text, TextInput, useToaster } from "@gravity-ui/uikit";
 import TaskItem from "@renderer/components/TaskItem/TaskItem";
 import TrackTaskItem from "@renderer/components/TrackTaskItem/TrackTaskItem";
 import { useTracker } from "@renderer/hooks/useTracker";
+import { useTrackerTask } from "@renderer/float/hooks/useTrackerTask";
 
 interface props {
   setting: Setting,
@@ -19,13 +20,18 @@ export default function Tasks({ setting, fetchRef }: props) {
   const { add } = useToaster()
   const [date, setDate] = useState<DateTime | null>(dateTime())
   const { getWorklogs, addWorklog  } = useWorklogs(setting.organizationId, setting.uid)
+  const { checkTasks } = useTrackerTask(setting.organizationId);
   const { getToken } = useYandexAuth(setting.token)
   const [worklogs, setWorklogs] = useState<WorklogItem[]>([])
   const [loading, setLoading] = useState(false);
 
+  const [isInvalid, setIsInvalid] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [issueKey, setIssueKey] = useState('')
+
   const [trackingLoading, setTrackingLoading] = useState(false);
 
-  const { tracks, updateTask, deleteTask } = useTracker()
+  const { tracks, updateTask, deleteTask, saveTrack } = useTracker()
   const today = date?.format('YYYY-MM-DD') ?? null
   const todayTasks = today ? (tracks.find(d => d.date === today)?.tasks ?? []) : []
 
@@ -100,7 +106,7 @@ export default function Tasks({ setting, fetchRef }: props) {
       const token = await getToken()
 
       for (const task of todayTasks) {
-        const success = await addWorklog(token, task.key, {
+        const success = await addWorklog(token, task.key.trim(), {
           start: date.startOf('day').toISOString(),
           duration: secondsToIsoDuration(task.time),
           comment: task.comment ?? '',
@@ -143,6 +149,35 @@ export default function Tasks({ setting, fetchRef }: props) {
   const totalSeconds =
     todayTasks.reduce((sum, task) => sum + task.time, 0) +
     worklogs.reduce((sum, w) => sum + parseIsoDurationToSeconds(w.duration), 0)
+
+  const addedTask = async () => {
+    if (!issueKey.trim() || !today) return
+
+    if (todayTasks.some(t => t.key.toUpperCase() === issueKey.trim().toUpperCase())) {
+      setIsInvalid(true)
+      return
+    }
+
+    setIsLoading(true)
+    setIsInvalid(false)
+
+    try {
+      const token = await getToken()
+      const exists = await checkTasks(token, issueKey.trim())
+
+      if (!exists) {
+        setIsInvalid(true)
+        return
+      }
+
+      await saveTrack(issueKey.trim(), 0, today)
+      setIssueKey('')
+    } catch {
+      setIsInvalid(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }
   return (
     <div className={classes.body}>
       <DateControl date={date} onDateChange={setDate}/>
@@ -159,12 +194,29 @@ export default function Tasks({ setting, fetchRef }: props) {
             todayTasks.map(task => (
               <TrackTaskItem
                 key={task.key}
+                date={today!}
                 task={task}
                 onSave={updateTask}
                 onDelete={deleteTask}
               />
             ))
           )}
+          <div className={classes.added}>
+            <TextInput
+              label="Задача:"
+              value={issueKey}
+              onUpdate={setIssueKey}
+              validationState={isInvalid ? 'invalid' : undefined}
+            />
+            <Button
+              view="action"
+              width={"max"}
+              onClick={() => addedTask()}
+              loading={isLoading}
+            >
+              Добавить задачу
+            </Button>
+          </div>
           {todayTasks.length > 0 && (
             <Button
               view="action"
@@ -178,7 +230,8 @@ export default function Tasks({ setting, fetchRef }: props) {
         </div>
         <div className={classes.taskFromTracker}>
           <div className={classes.header}>
-            <Text variant={"subheader-1"} color={"secondary"}>УЖЕ СПИСАНО:</Text> <ClipboardButton text={clipboardText} disabled={worklogs.length === 0} />
+            <Text variant={"subheader-1"} color={"secondary"}>УЖЕ СПИСАНО:</Text> <ClipboardButton text={clipboardText}
+                                                                                                   disabled={worklogs.length === 0}/>
           </div>
           {loading ? (
             <div className={classes.loader}>
@@ -209,6 +262,5 @@ export default function Tasks({ setting, fetchRef }: props) {
         </Text>
       </div>
     </div>
-
   )
 }

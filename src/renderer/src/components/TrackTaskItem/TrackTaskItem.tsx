@@ -5,11 +5,12 @@ import { TrackTask } from "@renderer/hooks/useTracker"
 
 interface TrackTaskItemProps {
   task: TrackTask
-  onSave: (key: string, time: number, comment: string) => void
-  onDelete: (key: string) => void
+  date: string
+  onSave: (key: string, time: number, comment: string, date: string) => void
+  onDelete: (key: string, date: string) => void
 }
 
-export default function TrackTaskItem({ task, onSave, onDelete }: TrackTaskItemProps) {
+export default function TrackTaskItem({ task, onSave, onDelete, date }: TrackTaskItemProps) {
   const [editing, setEditing] = useState(false)
   const [comment, setComment] = useState(task.comment ?? '')
   const [hours, setHours] = useState(Math.floor(task.time / 3600))
@@ -29,7 +30,7 @@ export default function TrackTaskItem({ task, onSave, onDelete }: TrackTaskItemP
 
   const handleSave = () => {
     const totalSeconds = (hours * 60 + minutes) * 60
-    onSave(task.key, totalSeconds, comment)
+    onSave(task.key, totalSeconds, comment, date)
     setEditing(false)
   }
 
@@ -49,7 +50,7 @@ export default function TrackTaskItem({ task, onSave, onDelete }: TrackTaskItemP
           />
         </div>
 
-        <div className={classes.editRow}>
+        <div className={classes.editMin}>
           <NumberInput
             label="мин:"
             value={minutes}
@@ -57,6 +58,12 @@ export default function TrackTaskItem({ task, onSave, onDelete }: TrackTaskItemP
             min={0}
             max={59}
           />
+          <Button onClick={()=> setMinutes(0)}>
+            0м
+          </Button>
+          <Button onClick={() => setMinutes(30)}>
+            30м
+          </Button>
         </div>
 
         <div className={classes.editRow}>
@@ -69,7 +76,7 @@ export default function TrackTaskItem({ task, onSave, onDelete }: TrackTaskItemP
 
         <div className={classes.editActions}>
           <Button size="s" view="action" onClick={handleSave}>Сохранить</Button>
-          <Button size="s" view="outlined-danger" onClick={() => onDelete(task.key)}>Удалить</Button>
+          <Button size="s" view="outlined-danger" onClick={() => onDelete(task.key, date)}>Удалить</Button>
           <Button size="s" view="flat" onClick={() => setEditing(false)}>Отмена</Button>
         </div>
       </div>
