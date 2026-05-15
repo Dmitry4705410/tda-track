@@ -1,5 +1,5 @@
 import classes from './style.module.css'
-import { Button, Text, TextInput, NumberInput } from "@gravity-ui/uikit"
+import { Button, Text, NumberInput, TextArea } from "@gravity-ui/uikit"
 import { useEffect, useState } from "react"
 import { TrackTask } from "@renderer/hooks/useTracker"
 
@@ -78,8 +78,10 @@ export default function TrackTaskItem({ task, onSave, onDelete, date }: TrackTas
         </div>
 
         <div className={classes.comment}>
-          <TextInput
-            label="комент:"
+          <TextArea
+            placeholder={"Комментарий"}
+            maxRows={5}
+            minRows={1}
             value={comment}
             onUpdate={setComment}
           />
