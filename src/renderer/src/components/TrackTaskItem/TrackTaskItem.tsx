@@ -34,6 +34,13 @@ export default function TrackTaskItem({ task, onSave, onDelete, date }: TrackTas
     setEditing(false)
   }
 
+  const addTime = (extraMinutes: number) => {
+    const total = hours * 60 + minutes + extraMinutes
+    const clamped = Math.max(0, total)
+    setHours(Math.floor(clamped / 60))
+    setMinutes(clamped % 60)
+  }
+
   if (editing) {
     return (
       <div className={classes.editTask}>
@@ -48,6 +55,8 @@ export default function TrackTaskItem({ task, onSave, onDelete, date }: TrackTas
             onUpdate={(v) => setHours(v ?? 0)}
             min={0}
           />
+          <Button onClick={() => addTime(-60)}>−1ч</Button>
+          <Button onClick={() => addTime(60)}>+1ч</Button>
         </div>
 
         <div className={classes.editMin}>
@@ -58,15 +67,17 @@ export default function TrackTaskItem({ task, onSave, onDelete, date }: TrackTas
             min={0}
             max={59}
           />
-          <Button onClick={()=> setMinutes(0)}>
+          <Button onClick={() => setMinutes(0)}>
             0м
           </Button>
           <Button onClick={() => setMinutes(30)}>
             30м
           </Button>
+          <Button onClick={() => addTime(-10)}>−10м</Button>
+          <Button onClick={() => addTime(10)}>+10м</Button>
         </div>
 
-        <div className={classes.editRow}>
+        <div className={classes.comment}>
           <TextInput
             label="комент:"
             value={comment}
